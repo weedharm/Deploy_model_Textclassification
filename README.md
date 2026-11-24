@@ -19,12 +19,12 @@ flowchart LR
 - 763 labelled Vietnamese utterances in `train_intents.tsv`, 22 intent labels (`intent2index.json`).
 - Model (`my_model.h5`, Keras 2.11, about 12 MB): input of 100 SVD features, reshaped to one time step,
   then an LSTM(256), six Dense layers (512 to 128 units, ReLU) and a softmax over 22 classes.
-- The TF-IDF vectoriser and SVD were not saved with the model. The app re-fits them on
-  `train_intents.tsv` at startup with `random_state=42`. With scikit-learn 1.2.2 this reproduces
-  the training features: the shipped model labels **98.6 % of the training utterances**
-  correctly (752 of 763). This is a training-set check, not a held-out score. No test set is in the repo.
-  Newer scikit-learn releases compute a different SVD, and with 1.9.1 the same check drops to 47 %.
-  That is why `requirements.txt` pins `scikit-learn==1.2.2`.
+- The TF-IDF vectoriser and SVD (100 components, `random_state=42`) are stored in
+  `preprocess.joblib`. They were fitted once on the original training text with scikit-learn 1.2.2,
+  which reproduces the features the model was trained on. The shipped model labels **98.4 % of the
+  training utterances** correctly. This is a training-set check, not a held-out score; no test set is
+  in the repo. The pickle needs the pinned `scikit-learn==1.2.2` to load. (Originally the app re-fitted
+  TF-IDF/SVD at every start; with scikit-learn 1.9.1 that silently dropped the same check to 47 %.)
 
 ## Tech stack
 
@@ -35,9 +35,10 @@ Python 3.11, TensorFlow / Keras 2 (2.11 to 2.15), scikit-learn 1.2.2, pandas, Fl
 ```
 .
 ├── deploy_model_1/
-│   ├── app.py               # Flask app: loads the model, re-fits TF-IDF + SVD, serves / and /double
+│   ├── app.py               # Flask app: loads the model and preprocessor, serves / and /double
 │   ├── my_model.h5          # trained Keras model (about 12 MB, needed at runtime)
-│   ├── train_intents.tsv    # training utterances: text <TAB> intent id (needed at runtime for TF-IDF/SVD)
+│   ├── preprocess.joblib    # fitted TF-IDF vectoriser + truncated SVD
+│   ├── train_intents.tsv    # training utterances (anonymised): text <TAB> intent id
 │   ├── intent2index.json    # intent name -> class id
 │   └── templates/
 │       └── index.html       # minimal input form
@@ -80,7 +81,9 @@ is fine for a demo but is not a production WSGI server.
 
 `train_intents.tsv` holds short Vietnamese chat messages from candidates applying for internships,
 already word-segmented (multi-syllable words joined with `_`). Each line has the message, a tab
-and the intent id. Candidates' email addresses in the data are obfuscated.
+and the intent id. The data is anonymised: candidates' and the recruiter's names were replaced
+with fictional names, and the company name and HR address with placeholders. The same
+replacement was applied to the vocabulary in `preprocess.joblib`, so the model's features are unchanged.
 
 ## License
 

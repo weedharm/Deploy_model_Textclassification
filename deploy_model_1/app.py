@@ -10,18 +10,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 import tensorflow as tf
 model = tf.keras.models.load_model(os.path.join(BASE_DIR, 'my_model.h5'))
 import json
-data_train = os.path.join(BASE_DIR, 'train_intents.tsv')
-import pandas as pd
-data_train = pd.read_table(data_train, header=None)
-text_train = data_train[0].values
-from sklearn.feature_extraction.text import TfidfVectorizer
-tfidf = TfidfVectorizer()
-tfidf.fit(text_train)
-X_train_tf_idf = tfidf.transform(text_train)
-from sklearn.decomposition import TruncatedSVD
-svd_tf_idf= TruncatedSVD(n_components=100, random_state=42)
-svd_tf_idf.fit(X_train_tf_idf)
-X_train_tf_idf_svd = svd_tf_idf.transform(X_train_tf_idf)
+# TF-IDF + TruncatedSVD fitted once on the original training text (the features the
+# model was trained on) and saved, so predictions do not depend on re-fitting at startup.
+# Personal names in the vocabulary were replaced by fictional ones; see README.
+import joblib
+_pre = joblib.load(os.path.join(BASE_DIR, 'preprocess.joblib'))
+tfidf, svd_tf_idf = _pre['tfidf'], _pre['svd']
 with open(os.path.join(BASE_DIR, 'intent2index.json')) as f:
     data = json.load(f) 
 
