@@ -2,11 +2,15 @@ from flask import Flask, request, render_template
 
 app = Flask(__name__)
 
+import os
+# Resolve data files next to this script so the app works from any working directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 import tensorflow as tf
-model = tf.keras.models.load_model('my_model.h5')
+model = tf.keras.models.load_model(os.path.join(BASE_DIR, 'my_model.h5'))
 import json
-data_train = 'train_intents.tsv'
+data_train = os.path.join(BASE_DIR, 'train_intents.tsv')
 import pandas as pd
 data_train = pd.read_table(data_train, header=None)
 text_train = data_train[0].values
@@ -18,7 +22,7 @@ from sklearn.decomposition import TruncatedSVD
 svd_tf_idf= TruncatedSVD(n_components=100, random_state=42)
 svd_tf_idf.fit(X_train_tf_idf)
 X_train_tf_idf_svd = svd_tf_idf.transform(X_train_tf_idf)
-with open('intent2index.json') as f:
+with open(os.path.join(BASE_DIR, 'intent2index.json')) as f:
     data = json.load(f) 
 
 
@@ -41,4 +45,4 @@ def double():
     return f'{result}'
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host=os.environ.get('HOST', '127.0.0.1'), port=int(os.environ.get('PORT', '5000')))
