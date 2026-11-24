@@ -1,0 +1,9 @@
+# The model was saved with Keras 2.11 (HDF5 format); TensorFlow 2.16+ ships Keras 3.
+tensorflow>=2.11,<2.16
+flask>=2.2
+# app.py re-fits TF-IDF + TruncatedSVD at startup; the SVD output (and so the model's
+# input features) depends on the scikit-learn version. 1.2.2 reproduces the training
+# features (98.6 % train-set accuracy); scikit-learn 1.9.1 drops it to 47 %.
+scikit-learn==1.2.2
+pandas>=1.5,<2.2
+numpy<2
